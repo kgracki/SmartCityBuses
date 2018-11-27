@@ -7,6 +7,7 @@
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
+from credentials import *
 
 from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour, FSMBehaviour
@@ -32,3 +33,15 @@ class Bus(Agent):
         print("Agent Bus starting")
         b = self.StartRideBehav()
         self.add_behaviour(b)
+
+if __name__ == "__main__":
+    bus = Bus(BUS1, BUS1_PASSWD)
+    bus.start()
+
+    while bus.is_alive():
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            bus.stop()
+            break
+    print("Bus finished")

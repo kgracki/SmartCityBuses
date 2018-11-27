@@ -8,13 +8,12 @@
 
 import time
 import datetime
-
+from credentials import *
 from spade.agent import Agent
 from spade.behaviour import PeriodicBehaviour, OneShotBehaviour, CyclicBehaviour, FSMBehaviour
 from spade.message import Message
 
 BUS_COUNT = 5
-BUS1 = "wsd_masters2@xmpp.jp"
 
 # STATES
 STATE_WAIT = "STATE_WAIT"
@@ -63,27 +62,27 @@ class Director(Agent):
 
         async def run(self):
             print("BusCheckPeriodic running")
-            msg = Message(to = "wsd_masters2@xmpp.jp")
+            msg = Message(to = BUS1)
             msg.set_metadata("performative", "query")
             msg.set_metadata("ontology", "busOntology")
             msg.set_metadata("language", "OWL-S")
             msg.body = "Are you alive?"
 
             await self.send(msg)
-            print("Message sent!")
+            print("Message {} sent!".format(msg))
 
 
     def setup(self):
         print("Agent Director starting...")
         self.counter = 0
-        #wait_behav = self.WaitBusBehav()
+        wait_behav = self.WaitBusBehav()
         start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
         self.bus_check = self.BusCheckPeriodic(period = 15, start_at = start_at)
-        #self.add_behaviour(wait_behav)
+        self.add_behaviour(wait_behav)
         self.add_behaviour(self.bus_check)
 
 if __name__ == "__main__":
-    director = Director("wsd_masters@xmpp.jp", "wsd_masters1234")
+    director = Director(DIRECTOR, DIRECTOR_PASSWD)
     director.start()
 
     while director.is_alive():
