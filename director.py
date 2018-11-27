@@ -37,7 +37,7 @@ class Director(Agent):
                     self.set_next_state(STATE_APPROVE)
                     #self.exit_code = self.myAgent.TRANSLATION_TO_APPROVE
                 else:
-                    print("Waiting for more buses. I've got {}/5".format(self.bus_counter))
+                    print("Waiting for more buses. I've got {}/{}".format(self.bus_counter, BUS_COUNT))
                     self.set_next_state(STATE_WAIT)
                     #self.exit_code = self.myAgent.TRANSLATION_TO_DEFAULT
             else:
@@ -51,7 +51,7 @@ class Director(Agent):
             for bus in [BUS1, BUS2, BUS3]:
                 msg = Message(to = bus)
                 msg.set_metadata("performative", "inform")
-                msg.set_metadata("ontology", "busOntology")
+                msg.set_metadata("ontology", "approval")
                 msg.set_metadata("language", "OWL-S")
                 msg.body = "You have permission to ride"
 

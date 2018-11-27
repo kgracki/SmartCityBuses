@@ -13,6 +13,9 @@ from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour, PeriodicBehaviour, FSMBehaviour
 from spade.message import Message
 
+STATE_WAIT = "STATE_WAIT"
+STATE_APPROVE = "STATE_APPROVE"
+STATE_DRIVING = "STATE_DRIVING"
 
 class Bus(Agent):
 
@@ -29,10 +32,32 @@ class Bus(Agent):
             await self.send(msg)
             print("Message {} sent".format(msg))
 
+    class WaitForApproval(State):
+        async def run(self):
+           self.msg = await self.receive(timeout = 10)
+           if self.msg and self.msg.get_metadata('ontology') == 'director_approval':
+               print("I've got approval to ride!")
+               slef.set_next_state(STATE_DRIVING)
+           else:
+               print("Didn't get approval yet")
+               self.set_next_state(STATE_WAIT)
+
+    class Driving(State):
+        async def run(self):
+            print("Driving running")
+
+
     def setup(self):
         print("Agent Bus starting")
         b = self.StartRideBehav()
         self.add_behaviour(b)
+
+        fsm = FSMBehaviour()
+        fsm.add_state(name = STATE_WAIT, state = self.WaitForApproval(),
+                      initial = True)
+        fsm.add_transition(source = STATE_WAIT, dest = STATE_WAIT)
+        fsm.add_behaviour(source = STATE_WAIT, dest = STATE_DRIVING)
+        self.add_behaviour(fsm)
 
 if __name__ == "__main__":
     bus1 = Bus(BUS1, BUS1_PASSWD)
