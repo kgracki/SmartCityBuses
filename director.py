@@ -10,10 +10,10 @@ import time
 import datetime
 from credentials import *
 from spade.agent import Agent
-from spade.behaviour import PeriodicBehaviour, OneShotBehaviour, CyclicBehaviour, FSMBehaviour
+from spade.behaviour import PeriodicBehaviour, OneShotBehaviour, CyclicBehaviour, FSMBehaviour, State
 from spade.message import Message
 
-BUS_COUNT = 5
+BUS_COUNT = 3
 
 # STATES
 STATE_WAIT = "STATE_WAIT"
@@ -21,45 +21,44 @@ STATE_APPROVE = "STATE_APPROVE"
 
 
 class Director(Agent):
-    class WaitBusBehav(OneShotBehaviour):
+
+    class BusWaitBehav(State):
+        bus_counter = 0
+
         async def run(self):
             print("WaitBusBehav running")
-
             self.msg = None
-            self.msg = await self.receive(timeout = 15)
-
-            if self.msg and self.msg.get_metadata == 'ready':
+            self.msg = await self.receive(timeout = 10)
+            if self.msg and self.msg.get_metadata('ontology') == 'bus_ready':
+                print("Bus {} is ready to ride".format(self.msg.sender))
                 self.bus_counter += 1
-                if self.myAgent.bus_counter >= BUS_COUNT:
+                if self.bus_counter >= BUS_COUNT:
                     print("Got every bus!")
+                    self.set_next_state(STATE_APPROVE)
                     #self.exit_code = self.myAgent.TRANSLATION_TO_APPROVE
                 else:
-                    print("Waiting for more buses")
+                    print("Waiting for more buses. I've got {}/5".format(self.bus_counter))
+                    self.set_next_state(STATE_WAIT)
                     #self.exit_code = self.myAgent.TRANSLATION_TO_DEFAULT
             else:
                 print("Still waiting...")
+                self.set_next_state(STATE_WAIT)
                 #self.exit_code = self.myAgent.TRANSLATION_TO_DEFAULT
 
-    class BusApproveBehav(OneShotBehaviour):
-        async def run(self):
+    class BusApproveBehav(State):
 
-            for bus in self.agent:
+        async def run(self):
+            for bus in [BUS1, BUS2, BUS3]:
                 msg = Message(to = bus)
                 msg.set_metadata("performative", "inform")
                 msg.set_metadata("ontology", "busOntology")
                 msg.set_metadata("language", "OWL-S")
-                msg.body("You have permission to ride")
+                msg.body = "You have permission to ride"
 
                 await self.send(msg)
                 print("Message to {}  sent!".format(bus))
 
-    class BusCheckPeriodic(PeriodicBehaviour):
-        async def on_start(self):
-            print("BusCheckPeriodic starts")
-
-        async def on_end(self):
-            self.agent.stop()
-
+    class BusCheckPeriodic(State):
         async def run(self):
             print("BusCheckPeriodic running")
             msg = Message(to = BUS1)
@@ -75,11 +74,18 @@ class Director(Agent):
     def setup(self):
         print("Agent Director starting...")
         self.counter = 0
-        wait_behav = self.WaitBusBehav()
-        start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
-        self.bus_check = self.BusCheckPeriodic(period = 15, start_at = start_at)
-        self.add_behaviour(wait_behav)
-        self.add_behaviour(self.bus_check)
+        #self.wait_behav = self.BsWaitBehav()
+        #start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
+        #self.bus_check = self.BusCheckPeriodic(period = 30, start_at = start_at)
+        #self.add_behaviour(self.wait_behav)
+        #self.add_behaviour(self.bus_check)
+
+        fsm = FSMBehaviour()
+        fsm.add_state(name = STATE_WAIT, state = self.BusWaitBehav(), initial = True)
+        fsm.add_state(name = STATE_APPROVE, state = self.BusApproveBehav())
+        fsm.add_transition(source = STATE_WAIT, dest = STATE_WAIT)
+        fsm.add_transition(source = STATE_WAIT, dest = STATE_APPROVE)
+        self.add_behaviour(fsm)
 
 if __name__ == "__main__":
     director = Director(DIRECTOR, DIRECTOR_PASSWD)

@@ -10,7 +10,7 @@ import time
 from credentials import *
 
 from spade.agent import Agent
-from spade.behaviour import OneShotBehaviour, CyclicBehaviour, FSMBehaviour
+from spade.behaviour import OneShotBehaviour, CyclicBehaviour, PeriodicBehaviour, FSMBehaviour
 from spade.message import Message
 
 
@@ -22,12 +22,12 @@ class Bus(Agent):
 
             msg = Message(to = DIRECTOR)
             msg.set_metadata("performative", "inform")
-            msg.set_metadata("ontology", "busOntology")
+            msg.set_metadata("ontology", "bus_ready")
             msg.set_metadata("language", "OWL-S")
-            msg.body("I'm ready to ride")
+            msg.body = "I'm ready to ride"
 
             await self.send(msg)
-            print("Message to {} sent".format(DIRECTOR))
+            print("Message {} sent".format(msg))
 
     def setup(self):
         print("Agent Bus starting")
@@ -35,13 +35,19 @@ class Bus(Agent):
         self.add_behaviour(b)
 
 if __name__ == "__main__":
-    bus = Bus(BUS1, BUS1_PASSWD)
-    bus.start()
+    bus1 = Bus(BUS1, BUS1_PASSWD)
+    bus2 = Bus(BUS2, BUS2_PASSWD)
+    bus3 = Bus(BUS3, BUS3_PASSWD)
+    bus1.start()
+    bus2.start()
+    bus3.start()
 
-    while bus.is_alive():
+    while True:
         try:
             time.sleep(1)
         except KeyboardInterrupt:
-            bus.stop()
+            bus1.stop()
+            bus2.stop()
+            bus3.stop()
             break
     print("Bus finished")
