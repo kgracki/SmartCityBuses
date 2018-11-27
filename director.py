@@ -7,30 +7,39 @@
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
+import datetime
 
 from spade.agent import Agent
-from spade.behaviour import OneShotBehaviour, CyclicBehaviour, FSMBehaviour
+from spade.behaviour import PeriodicBehaviour, OneShotBehaviour, CyclicBehaviour, FSMBehaviour
 from spade.message import Message
 
 BUS_COUNT = 5
+BUS1 = "wsd_masters2@xmpp.jp"
+
+# STATES
+STATE_WAIT = "STATE_WAIT"
+STATE_APPROVE = "STATE_APPROVE"
+
 
 class Director(Agent):
-
     class WaitBusBehav(OneShotBehaviour):
         async def run(self):
             print("WaitBusBehav running")
 
-            msg = None
-            msg = await self.receive(timeout = 15)
+            self.msg = None
+            self.msg = await self.receive(timeout = 15)
 
-            if msg and msg.get_metadata == 'ready':
-                self.counter += 1
-                if self.counter >= BUS_COUNT:
-                    self.exit_code = self.agent.TRANSLATION_TO_APPROVE
+            if self.msg and self.msg.get_metadata == 'ready':
+                self.bus_counter += 1
+                if self.myAgent.bus_counter >= BUS_COUNT:
+                    print("Got every bus!")
+                    #self.exit_code = self.myAgent.TRANSLATION_TO_APPROVE
                 else:
-                    self.exit_code = self.agent.TRANSLATION_TO_DEFAULT
+                    print("Waiting for more buses")
+                    #self.exit_code = self.myAgent.TRANSLATION_TO_DEFAULT
             else:
-                self.exit_code = self.agent.TRANSLATION_TO_DEFAULT
+                print("Still waiting...")
+                #self.exit_code = self.myAgent.TRANSLATION_TO_DEFAULT
 
     class BusApproveBehav(OneShotBehaviour):
         async def run(self):
@@ -45,12 +54,33 @@ class Director(Agent):
                 await self.send(msg)
                 print("Message to {}  sent!".format(bus))
 
+    class BusCheckPeriodic(PeriodicBehaviour):
+        async def on_start(self):
+            print("BusCheckPeriodic starts")
+
+        async def on_end(self):
+            self.agent.stop()
+
+        async def run(self):
+            print("BusCheckPeriodic running")
+            msg = Message(to = "wsd_masters2@xmpp.jp")
+            msg.set_metadata("performative", "query")
+            msg.set_metadata("ontology", "busOntology")
+            msg.set_metadata("language", "OWL-S")
+            msg.body = "Are you alive?"
+
+            await self.send(msg)
+            print("Message sent!")
+
 
     def setup(self):
         print("Agent Director starting...")
-        b = self.WaitBusBehav()
-        self.add_behaviour(b)
-
+        self.counter = 0
+        #wait_behav = self.WaitBusBehav()
+        start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
+        self.bus_check = self.BusCheckPeriodic(period = 15, start_at = start_at)
+        #self.add_behaviour(wait_behav)
+        self.add_behaviour(self.bus_check)
 
 if __name__ == "__main__":
     director = Director("wsd_masters@xmpp.jp", "wsd_masters1234")
@@ -62,4 +92,4 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             director.stop()
             break
-    print("Director finished with code: {}".format(self.b.exit_code))
+    print("Director finished")
