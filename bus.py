@@ -13,10 +13,12 @@ from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour,PeriodicBehaviour, FSMBehaviour, State
 from spade.message import Message
 
-STATE_START     = "STATE_START"
-STATE_WAIT      = "STATE_WAIT"
-STATE_APPROVE   = "STATE_APPROVE"
-STATE_DRIVING   = "STATE_DRIVING"
+STATE_START             = "STATE_START"
+STATE_WAIT              = "STATE_WAIT"
+STATE_APPROVE           = "STATE_APPROVE"
+STATE_DRIVING           = "STATE_DRIVING"
+STATE_PASS_KNOWLEDGE    = "STATE_PASS_KNOWLEDGE"
+
 
 class Bus(Agent):
 
@@ -67,8 +69,15 @@ class Bus(Agent):
         async def run(self):
             print("Driving running")
             print("My knowledge: {}".format(self.agent.get('approval')))
-            self.set_next_state(STATE_DRIVING)
             time.sleep(5)
+            self.set_next_state(STATE_PASS_KNOWLEDGE)
+
+
+    class PassYourKnowledge(State):
+        async def run(self):
+            print("PassYourKnowledge running")
+            print("I AN {}".format(self.agent.jid))
+            self.set_next_state(STATE_DRIVING)
 
     def setup(self):
         print("Agent Bus starting")
@@ -82,12 +91,16 @@ class Bus(Agent):
                       initial = True)
         fsm.add_state(name = STATE_WAIT, state = self.WaitForApproval())
         fsm.add_state(name = STATE_DRIVING, state = self.Driving())
+        fsm.add_state(name = STATE_PASS_KNOWLEDGE,
+                      state = self.PassYourKnowledge())
         # add transitions of your FSM object
         fsm.add_transition(source = STATE_START, dest = STATE_WAIT)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_START)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_WAIT)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_DRIVING)
         fsm.add_transition(source = STATE_DRIVING, dest = STATE_DRIVING)
+        fsm.add_transition(source = STATE_DRIVING, dest = STATE_PASS_KNOWLEDGE)
+        fsm.add_transition(source = STATE_PASS_KNOWLEDGE, dest = STATE_DRIVING)
         # add agent's behaviour
         self.add_behaviour(fsm)
         self.add_behaviour(answer_check)
@@ -97,6 +110,7 @@ if __name__ == "__main__":
     bus1 = Bus(BUS1, BUS1_PASSWD)
     bus2 = Bus(BUS2, BUS2_PASSWD)
     bus3 = Bus(BUS3, BUS3_PASSWD)
+
     bus1.start()
     bus2.start()
     bus3.start()

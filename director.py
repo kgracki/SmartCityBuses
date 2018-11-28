@@ -3,7 +3,7 @@
 # File              : director.py
 # Author            : Kacper Gracki <kacpergracki@gmail.com>
 # Date              : 27.11.2018
-# Last Modified Date: 28.11.2018
+# Last Modified Date: 29.11.2018
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
@@ -21,7 +21,6 @@ STATE_APPROVE = "STATE_APPROVE"
 
 
 class Director(Agent):
-
     class BusWaitBehav(State):
         bus_counter = 0
 
@@ -33,9 +32,10 @@ class Director(Agent):
                 # ugly shit
                 sender = "{}@{}".format(self.msg.sender[0], self.msg.sender[1])
                 print("Bus {} is ready to ride".format(sender))
+                if self.agent.get('{}'.format(sender)) != True:
+                    self.bus_counter += 1
                 self.agent.set(name = "{}".format(sender),
                                value = True)
-                self.bus_counter += 1
                 if self.bus_counter >= BUS_COUNT:
                     print("Got every bus!")
                     self.set_next_state(STATE_APPROVE)
@@ -80,13 +80,25 @@ class Director(Agent):
                 else:
                     print("Buses are not ready to ride")
 
+    class DirectorCheckMessage(PeriodicBehaviour):
+        async def run(self):
+            print("DirectorCheckMessage running")
+            msg = await self.receive(timeout = 5)
+            if msg:
+                print("Got message: {}".format(msg))
+            else:
+                print("No message")
+
     def setup(self):
         print("Agent Director starting...")
-        #self.wait_behav = self.BsWaitBehav()
+
         start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
-        self.bus_check = self.BusCheckPeriodic(period = 30, start_at = start_at)
-        #self.add_behaviour(self.wait_behav)
+        self.bus_check = self.BusCheckPeriodic(period = 30,
+                                               start_at = start_at)
+        self.message_check = self.DirectorCheckMessage(period = 10,
+                                                       start_at = start_at)
         self.add_behaviour(self.bus_check)
+        self.add_behaviour(self.message_check)
 
         fsm = FSMBehaviour()
         fsm.add_state(name = STATE_WAIT, state = self.BusWaitBehav(),
