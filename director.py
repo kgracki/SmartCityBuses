@@ -30,7 +30,11 @@ class Director(Agent):
             self.msg = None
             self.msg = await self.receive(timeout = 15)
             if self.msg and self.msg.get_metadata('ontology') == 'bus_ready':
-                print("Bus {} is ready to ride".format(self.msg.sender))
+                # ugly shit
+                sender = "{}@{}".format(self.msg.sender[0], self.msg.sender[1])
+                print("Bus {} is ready to ride".format(sender))
+                self.agent.set(name = "{}".format(sender),
+                               value = True)
                 self.bus_counter += 1
                 if self.bus_counter >= BUS_COUNT:
                     print("Got every bus!")
@@ -58,19 +62,23 @@ class Director(Agent):
                 await self.send(msg)
                 print("Message to {}  sent!".format(bus))
 
+
     class BusCheckPeriodic(PeriodicBehaviour):
         async def run(self):
             print("BusCheckPeriodic running")
             for bus in [BUS1, BUS2, BUS3]:
-                msg = Message(to = bus)
-                msg.set_metadata("performative", "query")
-                msg.set_metadata("ontology", "check_bus")
-                msg.set_metadata("language", "OWL-S")
-                msg.body = "Are you alive?"
+                print("Director knowledge {}: {}".format(bus, self.agent.get('{}'.format(bus))))
+                if self.agent.get(bus) == True:
+                    msg = Message(to = bus)
+                    msg.set_metadata("performative", "query")
+                    msg.set_metadata("ontology", "check_bus")
+                    msg.set_metadata("language", "OWL-S")
+                    msg.body = "Are you alive?"
 
-                await self.send(msg)
-                print("Message {} sent!".format(msg))
-
+                    await self.send(msg)
+                    print("Message {} sent!".format(msg))
+                else:
+                    print("Buses are not ready to ride")
 
     def setup(self):
         print("Agent Director starting...")

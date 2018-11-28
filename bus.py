@@ -13,13 +13,14 @@ from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour,PeriodicBehaviour, FSMBehaviour, State
 from spade.message import Message
 
-STATE_WAIT = "STATE_WAIT"
-STATE_APPROVE = "STATE_APPROVE"
-STATE_DRIVING = "STATE_DRIVING"
+STATE_START     = "STATE_START"
+STATE_WAIT      = "STATE_WAIT"
+STATE_APPROVE   = "STATE_APPROVE"
+STATE_DRIVING   = "STATE_DRIVING"
 
 class Bus(Agent):
 
-    class StartRideBehav(OneShotBehaviour):
+    class StartRideBehav(State):
         async def run(self):
             print("StartRideBehav running")
 
@@ -31,6 +32,7 @@ class Bus(Agent):
 
             await self.send(msg)
             print("Message {} sent".format(msg))
+            self.set_next_state(STATE_WAIT)
 
     class WaitForApproval(State):
         async def run(self):
@@ -38,10 +40,13 @@ class Bus(Agent):
            if self.msg and self.msg.get_metadata('ontology') ==             'director_approval':
                print("I've got approval to ride!")
                self.set(name = "approval", value = True)
+               print("My current: {}".format(self.agent.get('approval')))
                self.set_next_state(STATE_DRIVING)
            else:
                print("Didn't get approval yet")
-               self.set_next_state(STATE_WAIT)
+               self.set(name = "approval", value = False)
+               print("My current state: {}".format(self.agent.get('approval')))
+               self.set_next_state(STATE_START)
 
     class AnswerOnCheck(PeriodicBehaviour):
         async def run(self):
@@ -53,27 +58,37 @@ class Bus(Agent):
                 msg.set_metadata("performative", "inform")
                 msg.set_metadata("ontology", "check_bus")
                 msg.set_metadata("language", "OWL-S")
-                msg.body = "I'm alive?"
+                msg.body = "I'm alive"
+
                 await self.send(msg)
-            else:
-                print("Agent {} not responding".format(self.agent))
+                print("Message {} sent!".format(msg))
 
     class Driving(State):
         async def run(self):
             print("Driving running")
-
+            print("My knowledge: {}".format(self.agent.get('approval')))
+            self.set_next_state(STATE_DRIVING)
+            time.sleep(5)
 
     def setup(self):
         print("Agent Bus starting")
+        # create handles for agent's behaviour
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
-
+        # create FSM object
         fsm = FSMBehaviour()
-        fsm.add_state(name = STATE_WAIT, state = self.WaitForApproval(),
+        # add states to your FSM object
+        fsm.add_state(name = STATE_START, state = self.StartRideBehav(),
                       initial = True)
+        fsm.add_state(name = STATE_WAIT, state = self.WaitForApproval())
+        fsm.add_state(name = STATE_DRIVING, state = self.Driving())
+        # add transitions of your FSM object
+        fsm.add_transition(source = STATE_START, dest = STATE_WAIT)
+        fsm.add_transition(source = STATE_WAIT, dest = STATE_START)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_WAIT)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_DRIVING)
-
+        fsm.add_transition(source = STATE_DRIVING, dest = STATE_DRIVING)
+        # add agent's behaviour
         self.add_behaviour(fsm)
         self.add_behaviour(answer_check)
         self.add_behaviour(start_ride)
