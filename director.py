@@ -91,18 +91,21 @@ class Director(Agent):
 
     def setup(self):
         print("Agent Director starting...")
-
+        # Implement periodic behaviour
         start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
         self.bus_check = self.BusCheckPeriodic(period = 30,
                                                start_at = start_at)
         self.message_check = self.DirectorCheckMessage(period = 10,
                                                        start_at = start_at)
+        # Add periodic behaviour
         self.add_behaviour(self.bus_check)
         self.add_behaviour(self.message_check)
-
+        # Create FSB behaviour model
         fsm = FSMBehaviour()
+        # Add states to FSM model
         fsm.add_state(name = STATE_WAIT, state = self.BusWaitBehav(),
                       initial = True)
+        # Add transition to FSM model's state
         fsm.add_state(name = STATE_APPROVE, state = self.BusApproveBehav())
         fsm.add_transition(source = STATE_WAIT, dest = STATE_WAIT)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_APPROVE)

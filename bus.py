@@ -3,7 +3,7 @@
 # File              : bus.py
 # Author            : Kacper Gracki <kacpergracki@gmail.com>
 # Date              : 27.11.2018
-# Last Modified Date: 28.11.2018
+# Last Modified Date: 29.11.2018
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
@@ -81,19 +81,19 @@ class Bus(Agent):
 
     def setup(self):
         print("Agent Bus starting")
-        # create handles for agent's behaviour
+        # Create handles for agent's behaviour
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
-        # create FSM object
+        # Create FSM object
         fsm = FSMBehaviour()
-        # add states to your FSM object
+        # Add states to your FSM object
         fsm.add_state(name = STATE_START, state = self.StartRideBehav(),
                       initial = True)
         fsm.add_state(name = STATE_WAIT, state = self.WaitForApproval())
         fsm.add_state(name = STATE_DRIVING, state = self.Driving())
         fsm.add_state(name = STATE_PASS_KNOWLEDGE,
                       state = self.PassYourKnowledge())
-        # add transitions of your FSM object
+        # Add transitions of your FSM object
         fsm.add_transition(source = STATE_START, dest = STATE_WAIT)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_START)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_WAIT)
@@ -101,7 +101,7 @@ class Bus(Agent):
         fsm.add_transition(source = STATE_DRIVING, dest = STATE_DRIVING)
         fsm.add_transition(source = STATE_DRIVING, dest = STATE_PASS_KNOWLEDGE)
         fsm.add_transition(source = STATE_PASS_KNOWLEDGE, dest = STATE_DRIVING)
-        # add agent's behaviour
+        # Add agent's behaviour
         self.add_behaviour(fsm)
         self.add_behaviour(answer_check)
         self.add_behaviour(start_ride)
