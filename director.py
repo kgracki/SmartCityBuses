@@ -15,7 +15,7 @@ from spade.message import Message
 
 BUS_COUNT = 3
 
-# STATES
+# State declaration
 STATE_WAIT = "STATE_WAIT"
 STATE_APPROVE = "STATE_APPROVE"
 

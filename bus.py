@@ -13,6 +13,7 @@ from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour,PeriodicBehaviour, FSMBehaviour, State
 from spade.message import Message
 
+# State declaration
 STATE_START             = "STATE_START"
 STATE_WAIT              = "STATE_WAIT"
 STATE_APPROVE           = "STATE_APPROVE"
