@@ -85,9 +85,9 @@ class Director(Agent):
             print("DirectorCheckMessage running")
             msg = await self.receive(timeout = 5)
             if msg:
-                print("Got message: {}".format(msg))
+                print("Director got message: {}".format(msg.body))
             else:
-                print("No message")
+                print("Director no message")
 
     def setup(self):
         print("Agent Director starting...")
