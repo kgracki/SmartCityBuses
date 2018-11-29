@@ -77,14 +77,23 @@ class Bus(Agent):
     class PassYourKnowledge(State):
         async def run(self):
             print("PassYourKnowledge running")
-            print("I AN {}".format(self.agent.jid))
+            print("I AM {}".format(self.agent.jid))
             self.set_next_state(STATE_DRIVING)
+
+    class BusCheckMessage(PeriodicBehaviour):
+        async def run(self):
+            print("BusCheckMessage running")
+            msg = await self.receive(timeout = 5)
+            if msg:
+                print("Bus {} got message: {}".format(self.agent.jid,
+                                                     msg.body))
 
     def setup(self):
         print("Agent Bus starting")
         # Create handles for agent's behaviour
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
+        message_check = self.BusCheckMessage(period = 10)
         # Create FSM object
         fsm = FSMBehaviour()
         # Add states to your FSM object
