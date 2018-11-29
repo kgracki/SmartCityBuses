@@ -20,9 +20,10 @@ def distance_compute(pts, ptX1, ptY1, ptX2, ptY2):
         bpt = pts.index((ptX2, ptY2))
         # get distance between A and B
         if apt < bpt:
-            distance = pts[apt:bpt]
+            distance = pts[apt:(bpt + 1)]
         else:
-            distance = pts[bpt:apt]
+            distance = pts[bpt:(apt + 1)]
+        print(distance)
         # map given values
         diffs = map(ptdiff, zip(distance[:-1], distance[1:]))
         # compute path length
@@ -33,5 +34,5 @@ def distance_compute(pts, ptX1, ptY1, ptX2, ptY2):
     return path
 
 if __name__ == "__main__":
-    distance = distance_compute(map_points, 15, 11, 20, 10)
+    distance = distance_compute(map_points, 5, 5, 9, 20)
     print(distance)
