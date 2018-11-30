@@ -3,11 +3,15 @@
 # File              : bus.py
 # Author            : Kacper Gracki <kacpergracki@gmail.com>
 # Date              : 27.11.2018
-# Last Modified Date: 29.11.2018
+# Last Modified Date: 30.11.2018
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
+import sys
+sys.path.insert(0, '../')
 from credentials import *
+sys.path.insert(0, 'map_data/')
+from distance_compute import distance_compute
 
 from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour,PeriodicBehaviour, FSMBehaviour, State
@@ -19,7 +23,7 @@ STATE_WAIT              = "STATE_WAIT"
 STATE_APPROVE           = "STATE_APPROVE"
 STATE_DRIVING           = "STATE_DRIVING"
 STATE_PASS_KNOWLEDGE    = "STATE_PASS_KNOWLEDGE"
-
+STATE_GET_COORDS        = "STATE_GET_COORDS"
 
 class Bus(Agent):
 
@@ -73,7 +77,6 @@ class Bus(Agent):
             time.sleep(5)
             self.set_next_state(STATE_PASS_KNOWLEDGE)
 
-
     class PassYourKnowledge(State):
         async def run(self):
             print("PassYourKnowledge running")
@@ -87,6 +90,12 @@ class Bus(Agent):
             if msg:
                 print("Bus {} got message: {}".format(self.agent.jid,
                                                      msg.body))
+    class BusGetCoords(PeriodicBehaviour):
+        async def run(self):
+            print("BusGetCoords running")
+            # Get bus coordinates
+            #bus_coord = 
+            #self.agent.set(name = 'coords', value = bus_coord)
 
     def setup(self):
         print("Agent Bus starting")
@@ -94,6 +103,7 @@ class Bus(Agent):
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
         message_check = self.BusCheckMessage(period = 10)
+        get_coords = self.BusGetCoords(period = 15)
         # Create FSM object
         fsm = FSMBehaviour()
         # Add states to your FSM object
@@ -112,18 +122,20 @@ class Bus(Agent):
         fsm.add_transition(source = STATE_DRIVING, dest = STATE_PASS_KNOWLEDGE)
         fsm.add_transition(source = STATE_PASS_KNOWLEDGE, dest = STATE_DRIVING)
         # Add agent's behaviour
-        self.add_behaviour(fsm)
         self.add_behaviour(answer_check)
         self.add_behaviour(start_ride)
+        self.add_behaviour(get_coords)
+        self.add_behaviour(fsm)
 
 if __name__ == "__main__":
     bus1 = Bus(BUS1, BUS1_PASSWD)
     bus2 = Bus(BUS2, BUS2_PASSWD)
     bus3 = Bus(BUS3, BUS3_PASSWD)
-
+    bus4 = Bus(BUS4, BUS4_PASSWD)
     bus1.start()
     bus2.start()
     bus3.start()
+    bus4.start()
 
     while True:
         try:
@@ -132,5 +144,6 @@ if __name__ == "__main__":
             bus1.stop()
             bus2.stop()
             bus3.stop()
+            bus4.stop()
             break
     print("Bus finished")

@@ -3,7 +3,7 @@
 # File              : director.py
 # Author            : Kacper Gracki <kacpergracki@gmail.com>
 # Date              : 27.11.2018
-# Last Modified Date: 29.11.2018
+# Last Modified Date: 30.11.2018
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
@@ -77,6 +77,13 @@ class Director(Agent):
 
                     await self.send(msg)
                     print("Message {} sent!".format(msg))
+                    msg_respond = await self.receive(timeout = 5)
+                    if msg_respond and msg_respond.get_metadata('ontology') == 'check_bus':
+                        sender = "{}@{}".format(self.msg.sender[0],
+                                                self.msg.sender[1])
+                        print("Agent {} responded with message: {}".format(sender, msg_respond.body))
+                    else:
+                        print("Agent did not responded") 
                 else:
                     print("Buses are not ready to ride")
 
@@ -87,16 +94,14 @@ class Director(Agent):
             if msg:
                 print("Director got message: {}".format(msg.body))
             else:
-                print("Director no message")
+                print("Director got no message")
 
     def setup(self):
         print("Agent Director starting...")
         # Implement periodic behaviour
-        start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
-        self.bus_check = self.BusCheckPeriodic(period = 30,
-                                               start_at = start_at)
-        self.message_check = self.DirectorCheckMessage(period = 10,
-                                                       start_at = start_at)
+        #start_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
+        self.bus_check = self.BusCheckPeriodic(period = 30)
+        self.message_check = self.DirectorCheckMessage(period = 10)
         # Add periodic behaviour
         self.add_behaviour(self.bus_check)
         self.add_behaviour(self.message_check)
