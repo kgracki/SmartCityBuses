@@ -1,7 +1,15 @@
-from ztmSettings import APIkey
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : ztmAPI.py
+# Author            : Marcin Skryskiewicz <marskr@opoczta.pl>
+# Date              : 1.12.2018
+# Last Modified Date: 1.12.2018
+# Last Modified By  : Marcin Skryskiewicz <marskr@opoczta.pl>
+
+from ztmSettings import APIkey  #*
 import requests
 import time
-from math import radians, sin, cos, acos
+from math import sin, cos, acos, pi
 
 
 class TransportZTM:
@@ -39,8 +47,28 @@ class TransportZTM:
         return (latitude, longtitude, time)
 
     def calculateDistance(self, lat1, lon1, lat2, lon2):
-        dist = 6371.01 * acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2))
-        return round(dist, 2)
+        dist = 6371.01 * acos(sin(pi*lat1/180)*sin(pi*lat2/180)+cos(pi*lat1/180)*cos(pi*lat2/180) *
+                              cos(pi*lon2/180-pi*lon1/180))
+        return round(dist, 2)*1000
+
+    def convertLatLon(self, latitude, longitude):
+        latitude = latitude - round(latitude, 0)
+        longitude = longitude - round(longitude, 0)
+
+        # 1 degree = 111 km
+        xlat = round(latitude * 1000000, 0)
+        xlon = round(longitude * 1000000, 0)
+
+        return (xlat, xlon)
+
+    def mapMeasures(self, measured_points):
+        map_points3 = []
+
+        # 1 degree = 111 km
+        for i in measured_points:
+            map_points3.append(self.convertLatLon(i[0], i[1]))
+
+        return map_points3
 
 
 # Lat - wspolrzedna szerokosci geograficznej w ukladzie WGS84 (EPSG:4326)
@@ -59,6 +87,8 @@ type = 1  # 1 for buses, 2 for trams
 
 tran = TransportZTM(URL, res_id, APIkey, line, type)
 
+'''
+# this commented part allows to measure localisation of buses/trams
 data = tran.getAllLineMeasures()
 
 brigade = tran.getListOfLineBrigades(data)[0]
@@ -80,3 +110,5 @@ try:
             time.sleep(10)
 except:
     print("We could not find requested by http GET data! Please check input parameters!")
+'''
+
