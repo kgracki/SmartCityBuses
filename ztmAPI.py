@@ -6,7 +6,13 @@
 # Last Modified Date: 1.12.2018
 # Last Modified By  : Marcin Skryskiewicz <marskr@opoczta.pl>
 
-from ztmSettings import APIkey  #*
+# Lat - wspolrzedna szerokosci geograficznej w ukladzie WGS84 (EPSG:4326)
+# Lon - wspolrzedna dlugosci geograficznej w ukladzie WGS84 (EPSG:4326)
+# Time - czas wyslania sygnalu GPS
+# Lines - numer linii autobusowej lub tramwajowej
+# Brigade - numer brygady pojazdu
+
+
 import requests
 import time
 from math import sin, cos, acos, pi
@@ -62,32 +68,36 @@ class TransportZTM:
         return (xlat, xlon)
 
     def mapMeasures(self, measured_points):
-        map_points3 = []
+        map_points = []
 
         # 1 degree = 111 km
         for i in measured_points:
-            map_points3.append(self.convertLatLon(i[0], i[1]))
+            map_points.append(self.convertLatLon(i[0], i[1]))
 
-        return map_points3
+        return map_points
 
 
-# Lat - wspolrzedna szerokosci geograficznej w ukladzie WGS84 (EPSG:4326)
-# Lon - wspolrzedna dlugosci geograficznej w ukladzie WGS84 (EPSG:4326)
-# Time - czas wyslania sygnalu GPS
-# Lines - numer linii autobusowej lub tramwajowej
-# Brigade - numer brygady pojazdu
+def getBrigades(URL, res_id, APIkey, line, type):
 
-# timestamp, gps_lat, gps_long = get_current_bus()
+    transport_instance = TransportZTM(URL, res_id, APIkey, line, type)
 
-URL = "https://api.um.warszawa.pl/api/action/busestrams_get/"
+    data = transport_instance.getAllLineMeasures()
 
-res_id = "%20f2e5503e927d-4ad3-9500-4ab9e55deb59"
-line = 522  # line of actual bus to check
-type = 1  # 1 for buses, 2 for trams
+    return transport_instance.getListOfLineBrigades(data)
 
-tran = TransportZTM(URL, res_id, APIkey, line, type)
+
+def getMeasure(URL, res_id, APIkey, line, type, brigade):
+
+    transport_instance = TransportZTM(URL, res_id, APIkey, line, type)
+
+    data = transport_instance.getAllLineMeasures()
+
+    return transport_instance.getMeasureFromBrigade(data, brigade)
+
 
 '''
+tran = TransportZTM(URL, res_id, APIkey, line, type)
+
 # this commented part allows to measure localisation of buses/trams
 data = tran.getAllLineMeasures()
 
@@ -111,4 +121,3 @@ try:
 except:
     print("We could not find requested by http GET data! Please check input parameters!")
 '''
-
