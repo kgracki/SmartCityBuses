@@ -77,7 +77,15 @@ class TransportZTM:
         return map_points
 
 
-def getBrigades(URL, res_id, APIkey, line, type):
+def process_measures(URL, res_id, APIkey, line, type, measured_points):
+    bus = TransportZTM(URL, res_id, APIkey, line, type)
+    # map latitude and longitude to integer values & then launch graph searching for calculate path value
+    map_points = bus.mapMeasures(measured_points)
+
+    return map_points
+
+
+def get_brigades(URL, res_id, APIkey, line, type):
 
     transport_instance = TransportZTM(URL, res_id, APIkey, line, type)
 
@@ -86,7 +94,7 @@ def getBrigades(URL, res_id, APIkey, line, type):
     return transport_instance.getListOfLineBrigades(data)
 
 
-def getMeasure(URL, res_id, APIkey, line, type, brigade):
+def get_measure(URL, res_id, APIkey, line, type, brigade):
 
     transport_instance = TransportZTM(URL, res_id, APIkey, line, type)
 

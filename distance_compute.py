@@ -61,9 +61,8 @@ getMeasure(URL, res_id, APIkey, line, type, brigade_id)
 
 if __name__ == "__main__":
 
-    bus = TransportZTM(URL, res_id, APIkey, line, type)
     # map latitude and longitude to integer values & then launch graph searching for calculate path value
-    map_points = bus.mapMeasures(measured_points)
+    map_points = process_measures(URL, res_id, APIkey, line, type, measured_points)
 
     print("distance between 2 buses (graph edges):")
     print(distance_compute(map_points,
@@ -73,9 +72,9 @@ if __name__ == "__main__":
                            map_points[len(map_points)-1][1]))   # longitude 2
 
     print("List of bus brigades:")
-    print(getBrigades(URL, res_id, APIkey, line, type))
+    print(get_brigades(URL, res_id, APIkey, line, type))
 
-    firstBrigade = getBrigades(URL, res_id, APIkey, line, type)[0]
+    firstBrigade = get_brigades(URL, res_id, APIkey, line, type)[0]
 
     print("Measure:")
-    print(getMeasure(URL, res_id, APIkey, line, type, firstBrigade))
+    print(get_measure(URL, res_id, APIkey, line, type, firstBrigade))
