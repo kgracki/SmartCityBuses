@@ -3,7 +3,7 @@
 # File              : bus.py
 # Author            : Kacper Gracki <kacpergracki@gmail.com>
 # Date              : 27.11.2018
-# Last Modified Date: 30.11.2018
+# Last Modified Date: 02.12.2018
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
@@ -96,7 +96,7 @@ class Bus(Agent):
             # Get bus coordinates
             #bus_coord = 
             #self.agent.set(name = 'coords', value = bus_coord)
-
+            #print("Bus {} coordinates are set".format(self.agent.jid))
     def setup(self):
         print("Agent Bus starting")
         # Create handles for agent's behaviour

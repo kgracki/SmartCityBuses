@@ -3,7 +3,7 @@
 # File              : director.py
 # Author            : Kacper Gracki <kacpergracki@gmail.com>
 # Date              : 27.11.2018
-# Last Modified Date: 30.11.2018
+# Last Modified Date: 02.12.2018
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
@@ -13,7 +13,7 @@ from spade.agent import Agent
 from spade.behaviour import PeriodicBehaviour, OneShotBehaviour, CyclicBehaviour, FSMBehaviour, State
 from spade.message import Message
 
-BUS_COUNT = 3
+BUS_COUNT = 4
 
 # State declaration
 STATE_WAIT = "STATE_WAIT"
