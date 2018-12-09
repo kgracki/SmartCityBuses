@@ -135,12 +135,20 @@ class Bus(Agent):
         self.better_printer("Get desired distance: {} " . format(desired_distance))
 
     def check_if_there_is_a_need_to_change_bus_velocity(self):
+        if self.desired_distance == 0:
+            return
+
         max_velocity = (1 + SIMULATION_SETTINGS['max_velocity_change']) * SIMULATION_SETTINGS['bus_nominal_velocity']
+        max_velocity_change = SIMULATION_SETTINGS['max_velocity_change'] * SIMULATION_SETTINGS['bus_nominal_velocity']
         velocity_change = 0
         # check if bus has not any another bus before
-        if self.bus_navigator.position_on_bus_line > float(self.next_bus_position) :
-            velocity_change = SIMULATION_SETTINGS['max_velocity_change'] * SIMULATION_SETTINGS['bus_nominal_velocity']
-
+        if (
+            float(self.next_bus_position) < self.bus_navigator.position_on_bus_line or
+            float(self.next_bus_position) > self.bus_navigator.position_on_bus_line + self.desired_distance
+        ):
+            # there is no bus before and withing desired distance, so it means that bus needs to start drive faster
+            velocity_change = max_velocity_change
+        # check
         self.bus_navigator.velocity += velocity_change
 
         if self.bus_navigator.velocity > max_velocity:
