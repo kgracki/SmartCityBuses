@@ -76,7 +76,7 @@ class Bus(Agent):
 
     class Driving(State):
         async def run(self):
-            self.agent.bus_navigator.increase_position_on_bus_line(datetime.datetime.now());
+            self.agent.bus_navigator.update_position_on_bus_line(datetime.datetime.now());
             self.agent.better_printer("Driving running")
             self.agent.better_printer("My position: {}".format(self.agent.bus_navigator.position_on_bus_line))
             self.agent.better_printer("My knowledge: {}".format(self.agent.get('approval')))
