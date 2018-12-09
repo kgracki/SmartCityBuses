@@ -74,7 +74,7 @@ class Director(Agent):
             for bus in [BUS1, BUS2, BUS3]:
                 msg = Message(to = bus)
                 msg.set_metadata("performative", "inform")
-                msg.set_metadata("ontology", "desired_distance")
+                msg.set_metadata("information", "desired_distance")
                 msg.body = "{}" . format(desired_distance)
 
                 await self.send(msg)

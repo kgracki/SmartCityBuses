@@ -9,6 +9,7 @@
 import time
 import datetime
 import sys
+import asyncio
 sys.path.insert(0, '../')
 from credentials import *
 sys.path.insert(0, 'map_data/')
@@ -29,6 +30,7 @@ STATE_GET_COORDS        = "STATE_GET_COORDS"
 
 class Bus(Agent):
     bus_navigator = None
+    desired_distance = 0
 
     class StartRideBehav(State):
         async def run(self):
@@ -80,7 +82,7 @@ class Bus(Agent):
             self.agent.better_printer("Driving running")
             self.agent.better_printer(self.agent.bus_navigator.report_position())
             self.agent.better_printer("My knowledge: {}".format(self.agent.get('approval')))
-            time.sleep(5)
+            await asyncio.sleep(5)
             self.set_next_state(STATE_PASS_KNOWLEDGE)
 
     class PassYourKnowledge(State):
@@ -94,8 +96,10 @@ class Bus(Agent):
             self.agent.better_printer("BusCheckMessage running")
             msg = await self.receive(timeout = 5)
             if msg:
-                self.agent.better_printer("Bus {} got message: {}".format(self.agent.jid,
-                                                     msg.body))
+                self.agent.better_printer("Bus got message: {}".format(msg.body))
+                if msg.get_metadata("information") == "desired_distance":
+                    self.agent.keep_desired_distance(float(msg.body))
+
     class BusGetCoords(PeriodicBehaviour):
         async def run(self):
             self.agent.better_printer("BusGetCoords running")
@@ -105,6 +109,10 @@ class Bus(Agent):
 
     def better_printer(self, message_to_print):
         print("~~[{}]: {}".format(self.jid, message_to_print))
+
+    def keep_desired_distance(self, desired_distance):
+        self.desired_distance = desired_distance
+        self.better_printer("Get desired distance: {} " . format(desired_distance))
 
     def setup(self):
         self.better_printer("Agent Bus starting")
@@ -135,6 +143,7 @@ class Bus(Agent):
         self.add_behaviour(start_ride)
         self.add_behaviour(get_coords)
         self.add_behaviour(fsm)
+        self.add_behaviour(message_check)
 
     def add_bus_navigator(self, bus_navigator):
         self.bus_navigator = bus_navigator
