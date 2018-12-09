@@ -7,6 +7,7 @@
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
+import datetime
 import sys
 sys.path.insert(0, '../')
 from credentials import *
@@ -27,8 +28,10 @@ STATE_GET_COORDS        = "STATE_GET_COORDS"
 
 
 class Bus(Agent):
-    _position_on_bus_line = 0
-    initial_velocity = 50
+    start_time = None
+    last_position_reading = None
+    position_on_bus_line = 0
+    velocity = 15 # velocity in m/s
     bus_line = None
 
     class StartRideBehav(State):
@@ -52,6 +55,7 @@ class Bus(Agent):
                self.agent.better_printer("I've got approval to ride!")
                self.set(name = "approval", value = True)
                self.agent.better_printer("My current: {}".format(self.agent.get('approval')))
+               self.agent.start_time = datetime.datetime.now()
                self.set_next_state(STATE_DRIVING)
            else:
                self.agent.better_printer("Didn't get approval yet")
@@ -76,7 +80,9 @@ class Bus(Agent):
 
     class Driving(State):
         async def run(self):
+            self.agent.increase_position_on_bus_line(datetime.datetime.now());
             self.agent.better_printer("Driving running")
+            self.agent.better_printer("My position: {}".format(self.agent.position_on_bus_line))
             self.agent.better_printer("My knowledge: {}".format(self.agent.get('approval')))
             time.sleep(5)
             self.set_next_state(STATE_PASS_KNOWLEDGE)
@@ -103,6 +109,24 @@ class Bus(Agent):
 
     def better_printer(self, message_to_print):
         print("~~[{}]: {}".format(self.jid, message_to_print))
+
+    # based on time interval and velocity
+    def increase_position_on_bus_line(self, time_point):
+        # this is first distance calculation
+        if self.last_position_reading is None:
+            self.last_position_reading = self.start_time
+
+        # calculate time interval
+        time_interval = (time_point - self.last_position_reading).total_seconds()
+        # we assume that during this time interval velocity is constant,
+        # so we can easily calculate distance drived by bus in this time interval
+        distance = time_interval * self.velocity;
+
+        # made changes to position of bus on bus line
+        self.position_on_bus_line += distance
+
+        # prepare correct value for next time interval calculating
+        self.last_position_reading = time_point
 
     def setup(self):
         self.better_printer("Agent Bus starting")
