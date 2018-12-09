@@ -12,6 +12,7 @@ import sys
 import asyncio
 sys.path.insert(0, '../')
 from credentials import *
+from simulation_settings import *
 sys.path.insert(0, 'map_data/')
 from distance_compute import distance_compute
 
@@ -31,6 +32,12 @@ STATE_GET_COORDS        = "STATE_GET_COORDS"
 class Bus(Agent):
     bus_navigator = None
     desired_distance = 0
+    next_bus_position = None
+    next_bus_direction = None
+    next_bus = None
+    previous_bus = None
+    previous_bus_position = None
+    previous_bus_direction = None
 
     class StartRideBehav(State):
         async def run(self):
@@ -77,18 +84,29 @@ class Bus(Agent):
                 self.agent.better_printer("Message {} sent!".format(msg))
 
     class Driving(State):
+        async def send_position_to_neighbours(self):
+            for bus in [self.agent.next_bus, self.agent.previous_bus]:
+                msg = Message(to=bus)
+                msg.set_metadata("performative", "inform")
+                msg.set_metadata("information", "my_position")
+                msg.set_metadata("direction", "{}".format(self.agent.bus_navigator.direction))
+                msg.body = "{}".format(self.agent.bus_navigator.position_on_bus_line)
+
+                await self.send(msg)
+
         async def run(self):
             self.agent.bus_navigator.update_position_on_bus_line(datetime.datetime.now());
-            self.agent.better_printer("Driving running")
+            # self.agent.better_printer("Driving running")
             self.agent.better_printer(self.agent.bus_navigator.report_position())
-            self.agent.better_printer("My knowledge: {}".format(self.agent.get('approval')))
-            await asyncio.sleep(5)
+            # self.agent.better_printer("My knowledge: {}".format(self.agent.get('approval')))
+            await self.send_position_to_neighbours()
+            await asyncio.sleep(0.5)
             self.set_next_state(STATE_PASS_KNOWLEDGE)
 
     class PassYourKnowledge(State):
         async def run(self):
-            self.agent.better_printer("PassYourKnowledge running")
-            self.agent.better_printer("I AM {}".format(self.agent.jid))
+            # self.agent.better_printer("PassYourKnowledge running")
+            # self.agent.better_printer("I AM {}".format(self.agent.jid))
             self.set_next_state(STATE_DRIVING)
 
     class BusCheckMessage(PeriodicBehaviour):
@@ -99,6 +117,8 @@ class Bus(Agent):
                 self.agent.better_printer("Bus got message: {}".format(msg.body))
                 if msg.get_metadata("information") == "desired_distance":
                     self.agent.keep_desired_distance(float(msg.body))
+                elif msg.get_metadata("information") == "my_position":
+                    self.agent.get_position_of_neighbour_buses(msg)
 
     class BusGetCoords(PeriodicBehaviour):
         async def run(self):
@@ -114,12 +134,39 @@ class Bus(Agent):
         self.desired_distance = desired_distance
         self.better_printer("Get desired distance: {} " . format(desired_distance))
 
+    def check_if_there_is_a_need_to_change_bus_velocity(self):
+        max_velocity = (1 + SIMULATION_SETTINGS['max_velocity_change']) * SIMULATION_SETTINGS['bus_nominal_velocity']
+        velocity_change = 0
+        # check if bus has not any another bus before
+        if self.bus_navigator.position_on_bus_line > float(self.next_bus_position) :
+            velocity_change = SIMULATION_SETTINGS['max_velocity_change'] * SIMULATION_SETTINGS['bus_nominal_velocity']
+
+        self.bus_navigator.velocity += velocity_change
+
+        if self.bus_navigator.velocity > max_velocity:
+            self.bus_navigator.velocity = max_velocity
+
+        self.better_printer("Velocity change: {}, now velocity is: {}" . format(velocity_change, self.bus_navigator.velocity))
+
+    def get_position_of_neighbour_buses(self, msg):
+        sender = "{}@{}".format(msg.sender[0], msg.sender[1])
+        if self.next_bus == sender:
+            self.next_bus_position = msg.body
+            self.next_bus_direction = msg.get_metadata("direction")
+        elif self.previous_bus == sender:
+            self.previous_bus_position = msg.body
+            self.previous_bus_direction = msg.get_metadata("direction")
+
+        if self.next_bus_position is not None and self.previous_bus_position is not None:
+            self.check_if_there_is_a_need_to_change_bus_velocity()
+
     def setup(self):
         self.better_printer("Agent Bus starting")
         # Create handles for agent's behaviour
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
         message_check = self.BusCheckMessage(period = 10)
+        self.add_behaviour(message_check)
         get_coords = self.BusGetCoords(period = 15)
         # Create FSM object
         fsm = FSMBehaviour()
@@ -143,13 +190,16 @@ class Bus(Agent):
         self.add_behaviour(start_ride)
         self.add_behaviour(get_coords)
         self.add_behaviour(fsm)
-        self.add_behaviour(message_check)
 
     def add_bus_navigator(self, bus_navigator):
         self.bus_navigator = bus_navigator
 
     def add_line(self, bus_line):
         self.bus_navigator.bus_line = bus_line
+
+    def set_neighboring_buses(self, next_bus, previous_bus):
+        self.next_bus = next_bus
+        self.previous_bus = previous_bus
 
 
 if __name__ == "__main__":

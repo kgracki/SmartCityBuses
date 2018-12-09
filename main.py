@@ -22,26 +22,26 @@ if __name__ == "__main__":
 
     bus1 = Bus(BUS1, BUS1_PASSWD)
     bus_navigator_1 = BusNavigator(bus_line_414)
+    bus_navigator_1.position_on_bus_line = 4000
     bus1.add_bus_navigator(bus_navigator_1)
+    bus1.set_neighboring_buses(BUS3, BUS2)
 
     bus2 = Bus(BUS2, BUS2_PASSWD)
     bus_navigator_2 = BusNavigator(bus_line_414)
+    bus_navigator_2.position_on_bus_line = 2000
     bus2.add_bus_navigator(bus_navigator_2)
+    bus2.set_neighboring_buses(BUS1, BUS3)
 
     bus3 = Bus(BUS3, BUS3_PASSWD)
     bus_navigator_3 = BusNavigator(bus_line_414)
     bus3.add_bus_navigator(bus_navigator_3)
-
-    bus4 = Bus(BUS4, BUS4_PASSWD)
-    bus_navigator_4 = BusNavigator(bus_line_414)
-    bus4.add_bus_navigator(bus_navigator_4)
+    bus3.set_neighboring_buses(BUS2, BUS1)
 
     director.start()
     time.sleep(5)
     bus1.start()
     bus2.start()
     bus3.start()
-    bus4.start()
 
     while True:
         try:
@@ -51,6 +51,5 @@ if __name__ == "__main__":
             bus1.stop()
             bus2.stop()
             bus3.stop()
-            bus4.stop()
             break
     print("MAS finished")
