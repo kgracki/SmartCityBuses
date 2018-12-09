@@ -29,7 +29,7 @@ class Bus(Agent):
 
     class StartRideBehav(State):
         async def run(self):
-            print("StartRideBehav running")
+            self.agent.better_printer("StartRideBehav running")
 
             msg = Message(to = DIRECTOR)
             msg.set_metadata("performative", "inform")
@@ -38,29 +38,29 @@ class Bus(Agent):
             msg.body = "I'm ready to ride"
 
             await self.send(msg)
-            print("Message {} sent".format(msg))
+            self.agent.better_printer("Message {} sent".format(msg))
             self.set_next_state(STATE_WAIT)
 
     class WaitForApproval(State):
         async def run(self):
            self.msg = await self.receive(timeout = 10)
            if self.msg and self.msg.get_metadata('ontology') ==             'director_approval':
-               print("I've got approval to ride!")
+               self.agent.better_printer("I've got approval to ride!")
                self.set(name = "approval", value = True)
-               print("My current: {}".format(self.agent.get('approval')))
+               self.agent.better_printer("My current: {}".format(self.agent.get('approval')))
                self.set_next_state(STATE_DRIVING)
            else:
-               print("Didn't get approval yet")
+               self.agent.better_printer("Didn't get approval yet")
                self.set(name = "approval", value = False)
-               print("My current state: {}".format(self.agent.get('approval')))
+               self.agent.better_printer("My current state: {}".format(self.agent.get('approval')))
                self.set_next_state(STATE_START)
 
     class AnswerOnCheck(PeriodicBehaviour):
         async def run(self):
-            print("AnswerOnCheck running")
+            self.agent.better_printer("AnswerOnCheck running")
             msg = await self.receive(timeout = 30)
             if msg and msg.get_metadata('ontology') == 'check_bus':
-                print("{} -> I'm alive".format(self.agent))
+                self.agent.better_printer("{} -> I'm alive".format(self.agent))
                 msg = Message(to = DIRECTOR)
                 msg.set_metadata("performative", "inform")
                 msg.set_metadata("ontology", "check_bus")
@@ -68,37 +68,40 @@ class Bus(Agent):
                 msg.body = "I'm alive"
 
                 await self.send(msg)
-                print("Message {} sent!".format(msg))
+                self.agent.better_printer("Message {} sent!".format(msg))
 
     class Driving(State):
         async def run(self):
-            print("Driving running")
-            print("My knowledge: {}".format(self.agent.get('approval')))
+            self.agent.better_printer("Driving running")
+            self.agent.better_printer("My knowledge: {}".format(self.agent.get('approval')))
             time.sleep(5)
             self.set_next_state(STATE_PASS_KNOWLEDGE)
 
     class PassYourKnowledge(State):
         async def run(self):
-            print("PassYourKnowledge running")
-            print("I AM {}".format(self.agent.jid))
+            self.agent.better_printer("PassYourKnowledge running")
+            self.agent.better_printer("I AM {}".format(self.agent.jid))
             self.set_next_state(STATE_DRIVING)
 
     class BusCheckMessage(PeriodicBehaviour):
         async def run(self):
-            print("BusCheckMessage running")
+            self.agent.better_printer("BusCheckMessage running")
             msg = await self.receive(timeout = 5)
             if msg:
-                print("Bus {} got message: {}".format(self.agent.jid,
+                self.agent.better_printer("Bus {} got message: {}".format(self.agent.jid,
                                                      msg.body))
     class BusGetCoords(PeriodicBehaviour):
         async def run(self):
-            print("BusGetCoords running")
+            self.agent.better_printer("BusGetCoords running")
             # Get bus coordinates
-            #bus_coord = 
+            #bus_coord =
             #self.agent.set(name = 'coords', value = bus_coord)
 
+    def better_printer(self, message_to_print):
+        print("~~[{}]: {}".format(self.jid, message_to_print))
+
     def setup(self):
-        print("Agent Bus starting")
+        self.better_printer("Agent Bus starting")
         # Create handles for agent's behaviour
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
