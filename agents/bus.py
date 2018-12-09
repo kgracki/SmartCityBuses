@@ -25,7 +25,11 @@ STATE_DRIVING           = "STATE_DRIVING"
 STATE_PASS_KNOWLEDGE    = "STATE_PASS_KNOWLEDGE"
 STATE_GET_COORDS        = "STATE_GET_COORDS"
 
+
 class Bus(Agent):
+    _position_on_bus_line = 0
+    initial_velocity = 50
+    bus_line = None
 
     class StartRideBehav(State):
         async def run(self):
@@ -129,6 +133,9 @@ class Bus(Agent):
         self.add_behaviour(start_ride)
         self.add_behaviour(get_coords)
         self.add_behaviour(fsm)
+
+    def add_line(self, bus_line):
+        self.bus_line = bus_line
 
 if __name__ == "__main__":
     bus1 = Bus(BUS1, BUS1_PASSWD)
