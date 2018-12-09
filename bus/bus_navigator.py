@@ -1,9 +1,14 @@
 class BusNavigator:
-    start_time = None
-    last_position_reading = None
-    position_on_bus_line = 0
-    velocity = 15 # velocity in m/s
-    bus_line = None
+    start_time = None  # time when bus starts riding on this line
+    last_position_reading = None  # time of last position reading
+    position_on_bus_line = 0  # position on bus line in meters
+    velocity = 15  # velocity in m/s
+    bus_line = None  # object containing bus line
+    '''
+        North direction - 1, south direction -1 ~~ Direction of movement of bus, 
+        does he ride from starting point to end point or from end point to starting point?
+    '''
+    direction = 1
 
     def __init__(self, bus_line, position_on_bus_line = 0):
         self.bus_line = bus_line
@@ -14,7 +19,17 @@ class BusNavigator:
         distance = self.calculate_driven_distance(time_point)
 
         # made changes to position of bus on bus line
-        self.position_on_bus_line += distance
+        self.position_on_bus_line += self.direction * distance
+
+        # check if maybe bus reach end of line route? We assume that he immediately turn backs
+        if self.position_on_bus_line > self.bus_line.length_of_the_bus_route:
+            self.position_on_bus_line = 2 * self.bus_line.length_of_the_bus_route - self.position_on_bus_line
+            self.direction *= -1
+
+        # check if maybe bus reach starting point, turn him back
+        if self.position_on_bus_line < 0:
+            self.position_on_bus_line *= -1
+            self.direction *= -1
 
     # calculate driven distance since last calculation
     def calculate_driven_distance(self, time_point):
@@ -32,3 +47,11 @@ class BusNavigator:
         self.last_position_reading = time_point
 
         return distance
+
+    def report_position(self):
+        if self.direction == 1:
+            direction = "north"
+        else:
+            direction = "south"
+
+        return "My position: {}, I'm heading {}" . format(self.position_on_bus_line, direction)
