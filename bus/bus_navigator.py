@@ -10,7 +10,14 @@ class BusNavigator:
         self.position_on_bus_line = position_on_bus_line
 
     # based on time interval and velocity
-    def increase_position_on_bus_line(self, time_point):
+    def update_position_on_bus_line(self, time_point):
+        distance = self.calculate_driven_distance(time_point)
+
+        # made changes to position of bus on bus line
+        self.position_on_bus_line += distance
+
+    # calculate driven distance since last calculation
+    def calculate_driven_distance(self, time_point):
         # this is first distance calculation
         if self.last_position_reading is None:
             self.last_position_reading = self.start_time
@@ -21,8 +28,7 @@ class BusNavigator:
         # so we can easily calculate distance drived by bus in this time interval
         distance = time_interval * self.velocity;
 
-        # made changes to position of bus on bus line
-        self.position_on_bus_line += distance
-
-        # prepare correct value for next time interval calculating
+        # prepare correct value for next time interval/distance calculating
         self.last_position_reading = time_point
+
+        return distance
