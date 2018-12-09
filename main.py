@@ -18,6 +18,7 @@ import time
 if __name__ == "__main__":
     bus_line_414 = BusLine(414, 18400)
     director = Director(DIRECTOR, DIRECTOR_PASSWD)
+    director.add_bus_line(bus_line_414)
 
     bus1 = Bus(BUS1, BUS1_PASSWD)
     bus_navigator_1 = BusNavigator(bus_line_414)

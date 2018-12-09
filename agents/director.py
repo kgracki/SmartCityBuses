@@ -7,7 +7,7 @@
 # Last Modified By  : Kacper Gracki <kacpergracki@gmail.com>
 
 import time
-import datetime
+import asyncio
 from credentials import *
 from spade.agent import Agent
 from spade.behaviour import PeriodicBehaviour, OneShotBehaviour, CyclicBehaviour, FSMBehaviour, State
@@ -21,6 +21,8 @@ STATE_APPROVE = "STATE_APPROVE"
 
 
 class Director(Agent):
+    bus_line = None  # object containing bus line
+
     class BusWaitBehav(State):
         bus_counter = 0
 
@@ -62,6 +64,22 @@ class Director(Agent):
                 await self.send(msg)
                 print("Message to {}  sent!".format(bus))
 
+    # on every three second send to all buses on line desired distance between vehicles
+    class TellBusesDesiredDistance(CyclicBehaviour):
+        bus_count = 3  # for now it is hardcoded, will by dynamically get from domain environment
+
+        async def run(self):
+            desired_distance = self.agent.bus_line.length_of_the_bus_route / self.bus_count
+
+            for bus in [BUS1, BUS2, BUS3]:
+                msg = Message(to = bus)
+                msg.set_metadata("performative", "inform")
+                msg.set_metadata("ontology", "desired_distance")
+                msg.body = "{}" . format(desired_distance)
+
+                await self.send(msg)
+                print("Message to {}  sent, with desired distance: {}". format(bus, desired_distance))
+                await asyncio.sleep(3)
 
     class BusCheckPeriodic(PeriodicBehaviour):
         async def run(self):
@@ -96,6 +114,9 @@ class Director(Agent):
             else:
                 print("Director got no message")
 
+    def add_bus_line(self, bus_line):
+        self.bus_line = bus_line
+
     def setup(self):
         print("Agent Director starting...")
         # Implement periodic behaviour
@@ -115,6 +136,10 @@ class Director(Agent):
         fsm.add_transition(source = STATE_WAIT, dest = STATE_WAIT)
         fsm.add_transition(source = STATE_WAIT, dest = STATE_APPROVE)
         self.add_behaviour(fsm)
+
+        tell_buses_desired_distance = self.TellBusesDesiredDistance()
+        self.add_behaviour(tell_buses_desired_distance)
+
 
 if __name__ == "__main__":
     director = Director(DIRECTOR, DIRECTOR_PASSWD)
