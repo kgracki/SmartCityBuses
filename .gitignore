@@ -5,3 +5,4 @@ periodic_dummy.py
 credentials.py
 tags
 __pycache__/
+.idea/

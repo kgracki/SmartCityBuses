@@ -19,6 +19,8 @@ from distance_compute import distance_compute
 from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour,PeriodicBehaviour, FSMBehaviour, State
 from spade.message import Message
+from spade.template import Template
+from bus.bus_velocity_regulator import BusVelocityRegulator;
 
 # State declaration
 STATE_START             = "STATE_START"
@@ -116,7 +118,7 @@ class Bus(Agent):
     class BusCheckMessage(PeriodicBehaviour):
         async def run(self):
             self.agent.better_printer("BusCheckMessage running")
-            msg = await self.receive(timeout = 5)
+            msg = await self.receive(timeout = 3)
             if msg:
                 self.agent.better_printer("Bus got message: {}".format(msg.body))
                 if msg.get_metadata("information") == "desired_distance":
@@ -144,19 +146,8 @@ class Bus(Agent):
 
         max_velocity = (1 + SIMULATION_SETTINGS['max_velocity_change']) * SIMULATION_SETTINGS['bus_nominal_velocity']
         max_velocity_change = SIMULATION_SETTINGS['max_velocity_change'] * SIMULATION_SETTINGS['bus_nominal_velocity']
-        velocity_change = 0
-        # check if bus has not any another bus before
-        if (
-            float(self.next_bus_position) < self.bus_navigator.position_on_bus_line or
-            float(self.next_bus_position) > self.bus_navigator.position_on_bus_line + self.desired_distance
-        ):
-            # there is no bus before and withing desired distance, so it means that bus needs to start drive faster
-            velocity_change = max_velocity_change
-        # check
-        self.bus_navigator.velocity += velocity_change
 
-        if self.bus_navigator.velocity > max_velocity:
-            self.bus_navigator.velocity = max_velocity
+        velocity_change = BusVelocityRegulator.calculate_new_bus_velocity(self.bus_navigator, max_velocity, max_velocity_change, neighbours_info)
 
         self.better_printer("Velocity change: {}, now velocity is: {}" . format(velocity_change, self.bus_navigator.velocity))
 
@@ -182,7 +173,9 @@ class Bus(Agent):
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
         message_check = self.BusCheckMessage(period = 10)
-        self.add_behaviour(message_check)
+        template_desired_distance = Template()
+        template_desired_distance.set_metadata("information", "desired_distance")
+        self.add_behaviour(message_check, template_desired_distance)
         get_coords = self.BusGetCoords(period = 15)
         # Create FSM object
         fsm = FSMBehaviour()
