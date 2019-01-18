@@ -35,9 +35,11 @@ class Bus(Agent):
     next_bus_position = None
     next_bus_direction = None
     next_bus = None
+    next_bus_update_timestamp = 0;
     previous_bus = None
     previous_bus_position = None
     previous_bus_direction = None
+    previous_bus_update_timestamp = 0;
 
     class StartRideBehav(State):
         async def run(self):
@@ -89,8 +91,10 @@ class Bus(Agent):
                 msg = Message(to=bus)
                 msg.set_metadata("performative", "inform")
                 msg.set_metadata("information", "my_position")
+                msg.set_metadata("timestamp", time.time())
                 msg.set_metadata("direction", "{}".format(self.agent.bus_navigator.direction))
                 msg.body = "{}".format(self.agent.bus_navigator.position_on_bus_line)
+                self.agent.better_printer("{}".format(self.agent.bus_navigator.position_on_bus_line))
 
                 await self.send(msg)
 
@@ -159,11 +163,15 @@ class Bus(Agent):
     def get_position_of_neighbour_buses(self, msg):
         sender = "{}@{}".format(msg.sender[0], msg.sender[1])
         if self.next_bus == sender:
-            self.next_bus_position = msg.body
-            self.next_bus_direction = msg.get_metadata("direction")
+            if msg.get_metadata("timestamp") > self.next_bus_update_timestamp:
+                self.next_bus_position = msg.body
+                self.next_bus_direction = msg.get_metadata("direction")
+                self.next_bus_update_timestamp = msg.get_metadata("timestamp")
         elif self.previous_bus == sender:
-            self.previous_bus_position = msg.body
-            self.previous_bus_direction = msg.get_metadata("direction")
+            if msg.get_metadata("timestamp") > self.previous_bus_update_timestamp:
+                self.previous_bus_position = msg.body
+                self.previous_bus_direction = msg.get_metadata("direction")
+                self.previous_bus_update_timestamp = msg.get_metadata("timestamp")
 
         if self.next_bus_position is not None and self.previous_bus_position is not None:
             self.check_if_there_is_a_need_to_change_bus_velocity()
