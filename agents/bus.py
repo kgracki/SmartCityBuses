@@ -147,6 +147,16 @@ class Bus(Agent):
         max_velocity = (1 + SIMULATION_SETTINGS['max_velocity_change']) * SIMULATION_SETTINGS['bus_nominal_velocity']
         max_velocity_change = SIMULATION_SETTINGS['max_velocity_change'] * SIMULATION_SETTINGS['bus_nominal_velocity']
 
+        neighbours_info = {
+            'next_bus': self.next_bus,
+            'next_bus_position': self.next_bus_position,
+            'next_bus_direction': self.next_bus_direction,
+            'next_bus_update_timestamp': self.next_bus_update_timestamp,
+            'previous_bus': self.previous_bus,
+            'previous_bus_position': self.previous_bus_position,
+            'previous_bus_direction': self.previous_bus_direction,
+            'previous_bus_update_timestamp': self.previous_bus_update_timestamp,
+        }
         velocity_change = BusVelocityRegulator.calculate_new_bus_velocity(self.bus_navigator, max_velocity, max_velocity_change, neighbours_info)
 
         self.better_printer("Velocity change: {}, now velocity is: {}" . format(velocity_change, self.bus_navigator.velocity))
@@ -175,7 +185,10 @@ class Bus(Agent):
         message_check = self.BusCheckMessage(period = 10)
         template_desired_distance = Template()
         template_desired_distance.set_metadata("information", "desired_distance")
-        self.add_behaviour(message_check, template_desired_distance)
+
+        template_my_position = Template()
+        template_my_position.set_metadata("information", "my_position")
+        self.add_behaviour(message_check, template_desired_distance | template_my_position)
         get_coords = self.BusGetCoords(period = 15)
         # Create FSM object
         fsm = FSMBehaviour()
