@@ -37,6 +37,7 @@ class Bus(Agent):
     next_bus_position = None
     next_bus_direction = None
     next_bus = None
+
     next_bus_update_timestamp = 0;
     previous_bus = None
     previous_bus_position = None
@@ -164,6 +165,7 @@ class Bus(Agent):
     def get_position_of_neighbour_buses(self, msg):
         sender = "{}@{}".format(msg.sender[0], msg.sender[1])
         if self.next_bus == sender:
+
             if msg.get_metadata("timestamp") > self.next_bus_update_timestamp:
                 self.next_bus_position = msg.body
                 self.next_bus_direction = msg.get_metadata("direction")
@@ -183,12 +185,14 @@ class Bus(Agent):
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
         message_check = self.BusCheckMessage(period = 10)
+
         template_desired_distance = Template()
         template_desired_distance.set_metadata("information", "desired_distance")
 
         template_my_position = Template()
         template_my_position.set_metadata("information", "my_position")
         self.add_behaviour(message_check, template_desired_distance | template_my_position)
+
         get_coords = self.BusGetCoords(period = 15)
         # Create FSM object
         fsm = FSMBehaviour()

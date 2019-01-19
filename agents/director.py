@@ -81,6 +81,7 @@ class Director(Agent):
                 print("Message to {}  sent, with desired distance: {}". format(bus, desired_distance))
             await asyncio.sleep(3)
 
+
     class BusCheckPeriodic(PeriodicBehaviour):
         async def run(self):
             print("BusCheckPeriodic running")
