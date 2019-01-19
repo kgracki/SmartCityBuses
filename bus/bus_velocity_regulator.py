@@ -11,8 +11,8 @@ class BusVelocityRegulator:
         next_bus_position = BusPosition(float(neighbours_info["next_bus_position"]), int(neighbours_info["next_bus_direction"]))
         previous_bus_position = BusPosition(float(neighbours_info["previous_bus_position"]), int(neighbours_info["previous_bus_direction"]))
 
-        distance_to_next_bus = current_bus_navigator.calculate_distance_between(current_bus_position, next_bus_position, True)
-        distance_to_previous_bus = current_bus_navigator.calculate_distance_between(current_bus_position, previous_bus_position, False)
+        distance_to_next_bus = current_bus_navigator.calculate_distance_to_next_bus(current_bus_position, next_bus_position)
+        distance_to_previous_bus = current_bus_navigator.calculate_distance_to_previous_bus(current_bus_position, previous_bus_position)
 
         # #
         # real work to know how we should change velocity of the bus

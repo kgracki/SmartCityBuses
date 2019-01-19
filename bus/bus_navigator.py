@@ -79,3 +79,32 @@ class BusNavigator:
             bus2_from_start_of_track_distance = (self.bus_line.length_of_the_bus_route -
                                                  bus_2_position.position_on_bus_line)
             return bus1_to_start_of_track_distance + bus2_from_start_of_track_distance
+
+    def calculate_distance_to_next_bus(self, bus_position_point_of_view: BusPosition, next_bus_position: BusPosition):
+        # do they go in the same direction?
+        if bus_position_point_of_view.direction == next_bus_position.direction:
+            if next_bus_position.position_on_bus_line > bus_position_point_of_view.position_on_bus_line:
+                return next_bus_position.position_on_bus_line - bus_position_point_of_view.position_on_bus_line
+            else:
+                return (self.bus_line.length_of_the_bus_route - bus_position_point_of_view.position_on_bus_line) + next_bus_position.position_on_bus_line
+        else:
+            bus1_to_end_of_track_distance = (self.bus_line.length_of_the_bus_route -
+                                             bus_position_point_of_view.position_on_bus_line)
+            bus_next_from_end_of_track_distance = (self.bus_line.length_of_the_bus_route -
+                                                   next_bus_position.position_on_bus_line)
+            return bus1_to_end_of_track_distance + bus_next_from_end_of_track_distance
+
+    def calculate_distance_to_previous_bus(self, bus_position_point_of_view: BusPosition, previous_bus_position: BusPosition):
+        # do they go in the same direction?
+        if bus_position_point_of_view.direction == previous_bus_position.direction:
+            if previous_bus_position.position_on_bus_line < bus_position_point_of_view.position_on_bus_line:
+                return previous_bus_position.position_on_bus_line - bus_position_point_of_view.position_on_bus_line
+            else:
+                return (self.bus_line.length_of_the_bus_route - bus_position_point_of_view.position_on_bus_line) + previous_bus_position.position_on_bus_line
+        else:
+            bus1_to_end_of_track_distance = (self.bus_line.length_of_the_bus_route -
+                                             bus_position_point_of_view.position_on_bus_line)
+            bus_previous_from_end_of_track_distance = (self.bus_line.length_of_the_bus_route -
+                                                       previous_bus_position.position_on_bus_line)
+            return bus1_to_end_of_track_distance + bus_previous_from_end_of_track_distance
+
