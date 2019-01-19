@@ -19,6 +19,8 @@ from distance_compute import distance_compute
 from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour,PeriodicBehaviour, FSMBehaviour, State
 from spade.message import Message
+from spade.template import Template
+from bus.bus_velocity_regulator import BusVelocityRegulator;
 
 # State declaration
 STATE_START             = "STATE_START"
@@ -35,9 +37,12 @@ class Bus(Agent):
     next_bus_position = None
     next_bus_direction = None
     next_bus = None
+
+    next_bus_update_timestamp = 0;
     previous_bus = None
     previous_bus_position = None
     previous_bus_direction = None
+    previous_bus_update_timestamp = 0;
 
     class StartRideBehav(State):
         async def run(self):
@@ -89,8 +94,10 @@ class Bus(Agent):
                 msg = Message(to=bus)
                 msg.set_metadata("performative", "inform")
                 msg.set_metadata("information", "my_position")
+                msg.set_metadata("timestamp", time.time())
                 msg.set_metadata("direction", "{}".format(self.agent.bus_navigator.direction))
                 msg.body = "{}".format(self.agent.bus_navigator.position_on_bus_line)
+                self.agent.better_printer("{}".format(self.agent.bus_navigator.position_on_bus_line))
 
                 await self.send(msg)
 
@@ -112,7 +119,7 @@ class Bus(Agent):
     class BusCheckMessage(PeriodicBehaviour):
         async def run(self):
             self.agent.better_printer("BusCheckMessage running")
-            msg = await self.receive(timeout = 5)
+            msg = await self.receive(timeout = 3)
             if msg:
                 self.agent.better_printer("Bus got message: {}".format(msg.body))
                 if msg.get_metadata("information") == "desired_distance":
@@ -140,30 +147,34 @@ class Bus(Agent):
 
         max_velocity = (1 + SIMULATION_SETTINGS['max_velocity_change']) * SIMULATION_SETTINGS['bus_nominal_velocity']
         max_velocity_change = SIMULATION_SETTINGS['max_velocity_change'] * SIMULATION_SETTINGS['bus_nominal_velocity']
-        velocity_change = 0
-        # check if bus has not any another bus before
-        if (
-            float(self.next_bus_position) < self.bus_navigator.position_on_bus_line or
-            float(self.next_bus_position) > self.bus_navigator.position_on_bus_line + self.desired_distance
-        ):
-            # there is no bus before and withing desired distance, so it means that bus needs to start drive faster
-            velocity_change = max_velocity_change
-        # check
-        self.bus_navigator.velocity += velocity_change
 
-        if self.bus_navigator.velocity > max_velocity:
-            self.bus_navigator.velocity = max_velocity
+        neighbours_info = {
+            'next_bus': self.next_bus,
+            'next_bus_position': self.next_bus_position,
+            'next_bus_direction': self.next_bus_direction,
+            'next_bus_update_timestamp': self.next_bus_update_timestamp,
+            'previous_bus': self.previous_bus,
+            'previous_bus_position': self.previous_bus_position,
+            'previous_bus_direction': self.previous_bus_direction,
+            'previous_bus_update_timestamp': self.previous_bus_update_timestamp,
+        }
+        velocity_change = BusVelocityRegulator.calculate_new_bus_velocity(self.bus_navigator, self.desired_distance, max_velocity, max_velocity_change, neighbours_info)
 
         self.better_printer("Velocity change: {}, now velocity is: {}" . format(velocity_change, self.bus_navigator.velocity))
 
     def get_position_of_neighbour_buses(self, msg):
         sender = "{}@{}".format(msg.sender[0], msg.sender[1])
         if self.next_bus == sender:
-            self.next_bus_position = msg.body
-            self.next_bus_direction = msg.get_metadata("direction")
+
+            if msg.get_metadata("timestamp") > self.next_bus_update_timestamp:
+                self.next_bus_position = msg.body
+                self.next_bus_direction = msg.get_metadata("direction")
+                self.next_bus_update_timestamp = msg.get_metadata("timestamp")
         elif self.previous_bus == sender:
-            self.previous_bus_position = msg.body
-            self.previous_bus_direction = msg.get_metadata("direction")
+            if msg.get_metadata("timestamp") > self.previous_bus_update_timestamp:
+                self.previous_bus_position = msg.body
+                self.previous_bus_direction = msg.get_metadata("direction")
+                self.previous_bus_update_timestamp = msg.get_metadata("timestamp")
 
         if self.next_bus_position is not None and self.previous_bus_position is not None:
             self.check_if_there_is_a_need_to_change_bus_velocity()
@@ -174,7 +185,14 @@ class Bus(Agent):
         start_ride = self.StartRideBehav()
         answer_check = self.AnswerOnCheck(period = 10)
         message_check = self.BusCheckMessage(period = 10)
-        self.add_behaviour(message_check)
+
+        template_desired_distance = Template()
+        template_desired_distance.set_metadata("information", "desired_distance")
+
+        template_my_position = Template()
+        template_my_position.set_metadata("information", "my_position")
+        self.add_behaviour(message_check, template_desired_distance | template_my_position)
+
         get_coords = self.BusGetCoords(period = 15)
         # Create FSM object
         fsm = FSMBehaviour()
