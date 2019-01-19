@@ -57,9 +57,9 @@ class BusNavigator:
         else:
             direction = "south"
 
-        return "My position: {}, I'm heading {}" . format(self.position_on_bus_line, direction)
+        return "My position: {}, my velocity: {} I'm heading {}" . format(self.position_on_bus_line, self.velocity, direction)
 
-    def calculate_distance_between(self, bus_position_point_of_view: BusPosition, bus_2_position: BusPosition):
+    def calculate_distance_between(self, bus_position_point_of_view: BusPosition, bus_2_position: BusPosition, following = True):
         # do they go in the same direction?
         if bus_position_point_of_view.direction == bus_2_position.direction:
             return bus_2_position.position_on_bus_line - bus_position_point_of_view.position_on_bus_line
