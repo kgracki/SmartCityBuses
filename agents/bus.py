@@ -157,7 +157,7 @@ class Bus(Agent):
             'previous_bus_direction': self.previous_bus_direction,
             'previous_bus_update_timestamp': self.previous_bus_update_timestamp,
         }
-        velocity_change = BusVelocityRegulator.calculate_new_bus_velocity(self.bus_navigator, max_velocity, max_velocity_change, neighbours_info)
+        velocity_change = BusVelocityRegulator.calculate_new_bus_velocity(self.bus_navigator, self.desired_distance, max_velocity, max_velocity_change, neighbours_info)
 
         self.better_printer("Velocity change: {}, now velocity is: {}" . format(velocity_change, self.bus_navigator.velocity))
 
