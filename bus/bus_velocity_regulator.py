@@ -20,13 +20,20 @@ class BusVelocityRegulator:
 
         # normal case, middle bus, not first or last one
         if distance_to_next_bus > 0 and distance_to_previous_bus < 0:
-            factor = (distance_to_next_bus - desired_distance) / desired_distance - (distance_to_previous_bus - desired_distance) / desired_distance
+            factor = (distance_to_next_bus - desired_distance) / desired_distance - (-1 * desired_distance - distance_to_previous_bus) / desired_distance
         # it means that next bus is very, very daleko
         elif distance_to_next_bus < 0 and distance_to_previous_bus < 0:
             factor = 1
         # it means that previous bus is very daleko
         elif  distance_to_next_bus > 0 and distance_to_previous_bus > 0:
             factor = -1
+
+        if factor != 0:
+            print("factor: {}".format(factor))
+            print("distance_to_next_bus: {}".format(distance_to_next_bus))
+            print("distance_to_previous_bus: {}".format(distance_to_previous_bus))
+            print("neighbours_info[\"next_bus\"]: {}".format(neighbours_info["next_bus"]))
+            print("neighbours_info[\"previous_bus\"]: {}".format(neighbours_info["previous_bus"]))
 
         if factor > 1:
             factor = 1
